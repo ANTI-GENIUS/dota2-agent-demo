@@ -9,6 +9,7 @@ const recommendCount = document.querySelector("#recommend-count");
 const recommendations = document.querySelector("#recommendations");
 const itemBuild = document.querySelector("#item-build");
 const risks = document.querySelector("#risks");
+const playbook = document.querySelector("#playbook");
 const answer = document.querySelector("#answer");
 
 const CDN = "https://cdn.cloudflare.steamstatic.com";
@@ -333,7 +334,8 @@ async function loadAppData() {
     appDataPromise = Promise.all([
       fetchJson("./data/hero_stats.json"),
       fetchJson("./data/items.json"),
-    ]).then(([heroes, items]) => ({ heroes, items }));
+      fetchJson("./data/playbook.json").catch(() => ({ principles: [], samples: [] })),
+    ]).then(([heroes, items, playbookData]) => ({ heroes, items, playbookData }));
   }
   return appDataPromise;
 }
@@ -347,7 +349,7 @@ async function fetchJson(path) {
 }
 
 async function runAgent(payload) {
-  const { heroes, items } = await loadAppData();
+  const { heroes, items, playbookData } = await loadAppData();
   const heroIndex = buildHeroIndex(heroes);
   const allies = parseHeroNames(payload.allies || "", heroIndex);
   const enemies = parseHeroNames(payload.enemies || "", heroIndex);
@@ -356,7 +358,8 @@ async function runAgent(payload) {
   const recommendations = await recommendHeroes(heroes, allies, enemies, role);
   const itemAdvice = generateItemAdvice(items, allies, enemies, role, payload.question || "");
   const advice = generateAdvice(allies, enemies, role, balance);
-  const answerMd = buildAnswer(allies, enemies, role, payload.question || "", balance, recommendations, advice);
+  const matchedPlaybook = selectPlaybookEntries(playbookData, allies, enemies, role, payload.question || "");
+  const answerMd = buildAnswer(allies, enemies, role, payload.question || "", balance, recommendations, advice, matchedPlaybook);
 
   return {
     recognized: {
@@ -366,6 +369,7 @@ async function runAgent(payload) {
     balance,
     recommendations,
     item_advice: itemAdvice,
+    playbook: matchedPlaybook,
     advice,
     answer_md: answerMd,
   };
@@ -468,6 +472,84 @@ function heroDisplay(hero) {
     win_rate_source: source,
     pro_pick: Number(hero.pro_pick || 0),
   };
+}
+
+function selectPlaybookEntries(playbookData, allies, enemies, desiredRole, question, limit = 4) {
+  const allyNames = normalizedHeroNames(allies);
+  const enemyNames = normalizedHeroNames(enemies);
+  const allNames = new Set([...allyNames, ...enemyNames]);
+  const questionKey = normalizeName(question || "");
+  const rawEntries = [
+    ...(Array.isArray(playbookData?.principles) ? playbookData.principles : []),
+    ...(Array.isArray(playbookData?.samples) ? playbookData.samples : []),
+  ];
+  const matched = [];
+
+  for (const entry of rawEntries) {
+    if (!entry || entry.enabled === false) continue;
+
+    const roles = stringList(entry.roles);
+    if (roles.length && !roles.includes(desiredRole) && !roles.includes("flexible")) continue;
+
+    const entryAllies = new Set(stringList(entry.allies).map(normalizeName));
+    if (entryAllies.size && !hasIntersection(entryAllies, allyNames)) continue;
+
+    const entryEnemies = new Set(stringList(entry.enemies).map(normalizeName));
+    if (entryEnemies.size && !hasIntersection(entryEnemies, enemyNames)) continue;
+
+    const entryHeroes = new Set(stringList(entry.heroes).map(normalizeName));
+    if (entryHeroes.size && !hasIntersection(entryHeroes, allNames)) continue;
+
+    const keywords = stringList(entry.keywords).map(normalizeName);
+    let score = 1;
+    if (roles.length) score += 2;
+    if (entryAllies.size) score += 3;
+    if (entryEnemies.size) score += 3;
+    if (entryHeroes.size) score += 2;
+    if (questionKey && keywords.some((keyword) => keyword && questionKey.includes(keyword))) score += 2;
+
+    matched.push({
+      id: String(entry.id || ""),
+      title: String(entry.title || "未命名理解"),
+      source_type: String(entry.source_type || "playbook"),
+      source: String(entry.source || ""),
+      match_id: String(entry.match_id || ""),
+      mmr_or_rank: String(entry.mmr_or_rank || ""),
+      patch: String(entry.patch || ""),
+      summary: String(entry.summary || ""),
+      points: stringList(entry.points).slice(0, 4),
+      tags: stringList(entry.tags).slice(0, 5),
+      score,
+    });
+  }
+
+  return matched.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+function normalizedHeroNames(heroes) {
+  const names = new Set();
+  for (const hero of heroes) {
+    const englishName = hero.localized_name || "";
+    const internalName = hero.name || "";
+    const cnName = HERO_CN_NAMES[englishName] || "";
+    for (const value of [englishName, internalName, cnName, displayHeroName(hero)]) {
+      if (value) names.add(normalizeName(value));
+    }
+  }
+  return names;
+}
+
+function stringList(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  return [];
+}
+
+function hasIntersection(left, right) {
+  for (const value of left) {
+    if (right.has(value)) return true;
+  }
+  return false;
 }
 
 function analyzeRoleBalance(allies) {
@@ -791,7 +873,7 @@ function mergeUnique(primary, secondary) {
   return result;
 }
 
-function buildAnswer(allies, enemies, role, question, balance, recs, advice) {
+function buildAnswer(allies, enemies, role, question, balance, recs, advice, matchedPlaybook) {
   const lines = [];
   if (question) lines.push(`### 问题\n${question}`);
   lines.push("### 阵容识别");
@@ -807,6 +889,17 @@ function buildAnswer(allies, enemies, role, question, balance, recs, advice) {
   }
   lines.push("\n### 打法建议");
   for (const item of advice) lines.push(`- ${item}`);
+  lines.push("\n### 实战样本与个人理解");
+  if (matchedPlaybook.length) {
+    for (const entry of matchedPlaybook.slice(0, 4)) {
+      const source = entry.source || entry.source_type || "playbook";
+      lines.push(`- ${entry.title}（${source}）`);
+      if (entry.summary) lines.push(`  - ${entry.summary}`);
+      for (const point of (entry.points || []).slice(0, 2)) lines.push(`  - ${point}`);
+    }
+  } else {
+    lines.push("- 当前没有命中的 playbook 样本。可以在 data/playbook.json 添加 match_id、英雄、位置和复盘结论。");
+  }
   return lines.join("\n");
 }
 
@@ -830,6 +923,7 @@ function renderResult(data) {
   recommendations.innerHTML = data.recommendations.map((item) => renderHeroCard(item)).join("");
   itemBuild.innerHTML = renderItemBuild(data.item_advice);
   risks.innerHTML = data.balance.risks.map((risk) => `<li>${escapeHtml(risk)}</li>`).join("");
+  playbook.innerHTML = renderPlaybook(data.playbook || []);
   answer.innerHTML = markdownToHtml(data.answer_md);
 }
 
@@ -901,11 +995,41 @@ function renderItemIcon(item) {
   `;
 }
 
+function renderPlaybook(entries) {
+  if (!entries.length) {
+    return `<div class="playbook-empty">暂无命中的个人样本。可以在 data/playbook.json 中补充真实 match id 和复盘结论。</div>`;
+  }
+  return entries
+    .map((entry) => {
+      const meta = [
+        entry.source_type,
+        entry.source,
+        entry.match_id ? `Match ${entry.match_id}` : "",
+        entry.patch ? `Patch ${entry.patch}` : "",
+      ].filter(Boolean);
+      return `
+        <article class="playbook-card">
+          <div class="playbook-meta">${escapeHtml(meta.join(" · "))}</div>
+          <h3>${escapeHtml(entry.title || "未命名理解")}</h3>
+          <p>${escapeHtml(entry.summary || "")}</p>
+          <ul>
+            ${(entry.points || []).slice(0, 3).map((point) => `<li>${escapeHtml(point)}</li>`).join("")}
+          </ul>
+          <div class="tag-row">
+            ${(entry.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function renderError(error) {
   loadingState.classList.add("hidden");
   result.classList.remove("hidden");
   recommendations.innerHTML = "";
   itemBuild.innerHTML = "";
+  playbook.innerHTML = "";
   risks.innerHTML = `<li>${escapeHtml(error.message)}</li>`;
   answer.innerHTML = "<h3>请求失败</h3><p>请刷新页面后重试。</p>";
 }

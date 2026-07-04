@@ -9,6 +9,7 @@ const recommendCount = document.querySelector("#recommend-count");
 const recommendations = document.querySelector("#recommendations");
 const itemBuild = document.querySelector("#item-build");
 const risks = document.querySelector("#risks");
+const playbook = document.querySelector("#playbook");
 const answer = document.querySelector("#answer");
 
 sampleButton.addEventListener("click", () => {
@@ -75,6 +76,7 @@ function renderResult(data) {
     .map((risk) => `<li>${escapeHtml(risk)}</li>`)
     .join("");
 
+  playbook.innerHTML = renderPlaybook(data.playbook || []);
   answer.innerHTML = markdownToHtml(data.answer_md);
 }
 
@@ -170,11 +172,42 @@ function renderItemIcon(item) {
   `;
 }
 
+function renderPlaybook(entries) {
+  if (!entries.length) {
+    return `<div class="playbook-empty">暂无命中的个人样本。可以在 data/playbook.json 中补充真实 match id 和复盘结论。</div>`;
+  }
+  return entries
+    .map((entry) => {
+      const meta = [
+        entry.source_type,
+        entry.source,
+        entry.match_id ? `Match ${entry.match_id}` : "",
+        entry.patch ? `Patch ${entry.patch}` : "",
+      ].filter(Boolean);
+      const tags = entry.tags || [];
+      return `
+        <article class="playbook-card">
+          <div class="playbook-meta">${escapeHtml(meta.join(" · "))}</div>
+          <h3>${escapeHtml(entry.title || "未命名理解")}</h3>
+          <p>${escapeHtml(entry.summary || "")}</p>
+          <ul>
+            ${(entry.points || []).slice(0, 3).map((point) => `<li>${escapeHtml(point)}</li>`).join("")}
+          </ul>
+          <div class="tag-row">
+            ${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function renderError(error) {
   loadingState.classList.add("hidden");
   result.classList.remove("hidden");
   recommendations.innerHTML = "";
   itemBuild.innerHTML = "";
+  playbook.innerHTML = "";
   risks.innerHTML = `<li>${escapeHtml(error.message)}</li>`;
   answer.innerHTML = "<h3>请求失败</h3><p>请检查本地服务是否正常运行，或稍后重试 OpenDota 数据源。</p>";
 }

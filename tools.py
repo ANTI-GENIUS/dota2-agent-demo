@@ -598,6 +598,112 @@ def hero_display(hero: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def load_playbook(data_dir: Path) -> dict[str, Any]:
+    path = data_dir / "playbook.json"
+    if not path.exists():
+        return {"principles": [], "samples": []}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {"principles": [], "samples": []}
+    if not isinstance(data, dict):
+        return {"principles": [], "samples": []}
+    return data
+
+
+def select_playbook_entries(
+    playbook: dict[str, Any],
+    allies: list[dict[str, Any]],
+    enemies: list[dict[str, Any]],
+    desired_role: str,
+    question: str,
+    limit: int = 4,
+) -> list[dict[str, Any]]:
+    ally_names = _normalized_hero_names(allies)
+    enemy_names = _normalized_hero_names(enemies)
+    all_names = ally_names | enemy_names
+    question_key = normalize_name(question)
+    entries: list[dict[str, Any]] = []
+
+    raw_entries = []
+    for key in ("principles", "samples"):
+        value = playbook.get(key, [])
+        if isinstance(value, list):
+            raw_entries.extend(value)
+
+    for entry in raw_entries:
+        if not isinstance(entry, dict) or entry.get("enabled") is False:
+            continue
+
+        roles = _string_list(entry.get("roles"))
+        if roles and desired_role not in roles and "flexible" not in roles:
+            continue
+
+        entry_allies = {normalize_name(item) for item in _string_list(entry.get("allies"))}
+        if entry_allies and not entry_allies.intersection(ally_names):
+            continue
+
+        entry_enemies = {normalize_name(item) for item in _string_list(entry.get("enemies"))}
+        if entry_enemies and not entry_enemies.intersection(enemy_names):
+            continue
+
+        entry_heroes = {normalize_name(item) for item in _string_list(entry.get("heroes"))}
+        if entry_heroes and not entry_heroes.intersection(all_names):
+            continue
+
+        keywords = {normalize_name(item) for item in _string_list(entry.get("keywords"))}
+        score = 1
+        if roles:
+            score += 2
+        if entry_allies:
+            score += 3
+        if entry_enemies:
+            score += 3
+        if entry_heroes:
+            score += 2
+        if question_key and any(keyword and keyword in question_key for keyword in keywords):
+            score += 2
+
+        entries.append(
+            {
+                "id": str(entry.get("id", "")),
+                "title": str(entry.get("title", "未命名理解")),
+                "source_type": str(entry.get("source_type", "playbook")),
+                "source": str(entry.get("source", "")),
+                "match_id": str(entry.get("match_id", "")),
+                "mmr_or_rank": str(entry.get("mmr_or_rank", "")),
+                "patch": str(entry.get("patch", "")),
+                "summary": str(entry.get("summary", "")),
+                "points": _string_list(entry.get("points"))[:4],
+                "tags": _string_list(entry.get("tags"))[:5],
+                "score": score,
+            }
+        )
+
+    entries.sort(key=lambda item: item["score"], reverse=True)
+    return entries[:limit]
+
+
+def _normalized_hero_names(heroes: list[dict[str, Any]]) -> set[str]:
+    names: set[str] = set()
+    for hero in heroes:
+        english_name = str(hero.get("localized_name") or "")
+        internal_name = str(hero.get("name") or "")
+        cn_name = HERO_CN_NAMES.get(english_name, "")
+        for value in (english_name, internal_name, cn_name, display_hero_name(hero)):
+            if value:
+                names.add(normalize_name(value))
+    return names
+
+
+def _string_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
 def analyze_role_balance(allies: list[dict[str, Any]]) -> dict[str, Any]:
     role_count: dict[str, int] = {}
     attr_count: dict[str, int] = {}

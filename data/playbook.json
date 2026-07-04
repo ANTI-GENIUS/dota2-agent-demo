@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "principles": [
+    {
+      "id": "lane-right-before-counter",
+      "enabled": true,
+      "title": "先判断线权，不只看英雄克制",
+      "source_type": "个人理解",
+      "source": "高陈成 playbook",
+      "roles": ["carry", "mid", "offlane", "flexible"],
+      "allies": [],
+      "enemies": [],
+      "keywords": ["对线", "线权", "补什么", "怎么打"],
+      "summary": "英雄胜率和克制表只能提供候选，真正落地要先判断这一路有没有补刀、推线、控符和支援主动权。",
+      "points": [
+        "有线权的一方可以先动、先控符、先保护野区；没有线权时不要把推荐理解成无脑压制。",
+        "如果英雄理论克制但前 6 分钟被压出经验区，这个克制在实战里基本无法兑现。",
+        "对线劣势时优先考虑补给、小件和兵线处理，不要直接照搬后期出装。"
+      ],
+      "tags": ["对线", "BP", "节奏"]
+    },
+    {
+      "id": "timing-window-before-six-slot",
+      "enabled": true,
+      "title": "先看强势期，再看六神装",
+      "source_type": "个人理解",
+      "source": "高陈成 playbook",
+      "roles": ["carry", "mid", "offlane", "flexible"],
+      "allies": [],
+      "enemies": [],
+      "keywords": ["团战", "节奏", "中期", "装备"],
+      "summary": "攻略建议不能只说后期出什么，而要说明这套阵容在哪个时间点该接团、该避战还是该换资源。",
+      "points": [
+        "10 到 18 分钟看第一轮关键装和大招冷却；这个阶段决定能不能控图。",
+        "己方前中期弱时，核心目标是守塔、清线、换资源，不能因为阵容后期强就硬接劣势团。",
+        "己方先手强时，出装要服务开雾和抓人节奏，而不是只堆输出。"
+      ],
+      "tags": ["强势期", "团战", "装备节奏"]
+    },
+    {
+      "id": "long-range-burst-survival-first",
+      "enabled": true,
+      "title": "面对长手爆发先活住，再谈反打",
+      "source_type": "个人理解",
+      "source": "高陈成 playbook",
+      "roles": ["carry", "mid", "offlane", "flexible"],
+      "allies": [],
+      "enemies": ["Shadow Fiend", "Sniper", "Lina", "Drow Ranger"],
+      "keywords": ["对线", "影魔", "火枪", "火女", "小黑", "怎么打"],
+      "summary": "面对长手高爆发英雄，错误不是少补几个刀，而是连续吃技能导致血线崩掉，随后丢符、丢塔、丢野区。",
+      "points": [
+        "对线期优先保证血线和站位，鞋、魔棒、凝魂之露这类小件经常比裸大件更关键。",
+        "不要在没有视野或没有位移资源时强行追击长手核心，容易被反手拉扯。",
+        "打团时先处理视野和切入角度，能逼出 BKB 或位移再考虑二次进场。"
+      ],
+      "tags": ["长手", "对线抗压", "团战切入"]
+    },
+    {
+      "id": "support-is-map-control",
+      "enabled": true,
+      "title": "辅助不是跟人挂机，而是重建地图信息",
+      "source_type": "个人理解",
+      "source": "高陈成 playbook",
+      "roles": ["soft_support", "hard_support"],
+      "allies": [],
+      "enemies": [],
+      "keywords": ["辅助", "视野", "游走", "怎么打"],
+      "summary": "辅助位的核心价值不是一直站在大哥旁边，而是在关键时间点用视野、雾和保护动作改变地图状态。",
+      "points": [
+        "前 10 分钟先判断哪一路能打出优势，把资源投给能转化为塔和野区控制的一路。",
+        "中期视野要跟着下一波目标走：要推塔就做进攻眼，要守野区就做入口保护眼。",
+        "如果队友没有先手，辅助更要提前站位，不能等团战开始后再补控制。"
+      ],
+      "tags": ["辅助", "视野", "地图控制"]
+    }
+  ],
+  "samples": [
+    {
+      "id": "sample-template",
+      "enabled": false,
+      "title": "真实样本模板：把你的复盘或高分局 match id 填到这里",
+      "source_type": "样本模板",
+      "source": "待补充",
+      "match_id": "",
+      "mmr_or_rank": "",
+      "patch": "",
+      "roles": ["mid"],
+      "allies": ["Ember Spirit"],
+      "enemies": ["Shadow Fiend"],
+      "keywords": ["对线", "影魔"],
+      "summary": "这里写这局最重要的判断，例如 3 分钟前如何处理兵线、6 分钟符点如何争、第一件装备为什么这样出。",
+      "points": [
+        "这里写样本中的关键时间点。",
+        "这里写你从这局里抽象出来的稳定原则。",
+        "这里写这个结论不适用的情况，避免误导。"
+      ],
+      "tags": ["模板"]
+    }
+  ]
+}

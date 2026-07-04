@@ -16,7 +16,29 @@
 - 根据敌方英雄 matchup 数据推荐候选英雄。
 - 根据己方主英雄、位置偏好和敌方英雄类型生成出门装、对线装、核心装、针对装，并在页面中使用 Dota2 装备图标展示。
 - 根据敌方控制、爆发、前排厚度给出装备和打法建议。
+- 支持 `data/playbook.json` 个人理解/实战样本库，命中当前阵容后会单独展示“实战样本与个人理解”。
 - 所有 OpenDota 数据会缓存在 `data/`，避免每次请求都访问网络。
+
+## 攻略内容维护
+
+推荐英雄和胜率只作为候选参考，不应直接当作攻略结论。真正想体现游戏理解，优先维护：
+
+```text
+data/playbook.json
+```
+
+每条内容建议包含：
+
+- `source_type`：个人理解、天梯样本、职业样本、复盘样本。
+- `match_id`：真实对局 ID，没有就不要冒充样本。
+- `roles`、`allies`、`enemies`、`keywords`：用于决定什么场景下引用。
+- `summary`、`points`：写清楚具体时间点、兵线/视野/装备节奏，以及不适用的情况。
+
+GitHub Pages 静态版对应文件是：
+
+```text
+docs/data/playbook.json
+```
 
 ## 运行
 
@@ -93,7 +115,7 @@ Content-Type: application/json
 
 ## 数据说明
 
-英雄统计和 matchup 数据来自 OpenDota public API。这个 Demo 的推荐逻辑是工程启发式，不代表职业战队 BP 结论；如果要做成更强的 Agent，可以继续接入：
+英雄统计和 matchup 数据来自 OpenDota public API。推荐逻辑是工程启发式，实战结论应优先来自个人复盘、真实 match id 和高质量样本；如果要做成更强的 Agent，可以继续接入：
 
 - 当前版本 patch 数据和英雄改动。
 - STRATZ/Dotabuff 等更细粒度数据源。

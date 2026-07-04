@@ -13,8 +13,10 @@ from tools import (
     generate_advice,
     generate_item_advice,
     hero_display,
+    load_playbook,
     parse_hero_names,
     recommend_heroes,
+    select_playbook_entries,
 )
 
 
@@ -27,6 +29,7 @@ class AgentStep:
 
 class Dota2DraftAgent:
     def __init__(self, data_dir: Path):
+        self.data_dir = data_dir
         self.client = OpenDotaClient(data_dir)
 
     def run(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -91,6 +94,13 @@ class Dota2DraftAgent:
 
         advice = generate_advice(allies, enemies, desired_role, balance)
         item_advice = generate_item_advice(self.client, allies, enemies, desired_role, question)
+        playbook = select_playbook_entries(
+            load_playbook(self.data_dir),
+            allies,
+            enemies,
+            desired_role,
+            question,
+        )
         steps.append(
             AgentStep(
                 name="generate_item_advice",
@@ -112,6 +122,7 @@ class Dota2DraftAgent:
             recommendations=recommendations,
             advice=advice,
             item_advice=item_advice,
+            playbook=playbook,
         )
         steps.append(
             AgentStep(
@@ -138,9 +149,10 @@ class Dota2DraftAgent:
             "recommendations": recommendations,
             "advice": advice,
             "item_advice": item_advice,
+            "playbook": playbook,
             "answer_md": answer_md,
             "steps": [asdict(step) for step in steps],
-            "data_note": "Hero statistics and matchup data are loaded from OpenDota public API and cached locally.",
+            "data_note": "Hero statistics are only references. Practical conclusions are pulled from the local playbook when matched.",
         }
 
     @staticmethod
@@ -168,6 +180,7 @@ class Dota2DraftAgent:
         recommendations: list[dict[str, Any]],
         advice: list[str],
         item_advice: dict[str, Any],
+        playbook: list[dict[str, Any]],
     ) -> str:
         lines: list[str] = []
         if question:
@@ -199,5 +212,17 @@ class Dota2DraftAgent:
         lines.append("\n### 打法建议")
         for item in advice:
             lines.append(f"- {item}")
+
+        lines.append("\n### 实战样本与个人理解")
+        if playbook:
+            for entry in playbook[:4]:
+                source = entry.get("source") or entry.get("source_type") or "playbook"
+                lines.append(f"- {entry['title']}（{source}）")
+                if entry.get("summary"):
+                    lines.append(f"  - {entry['summary']}")
+                for point in entry.get("points", [])[:2]:
+                    lines.append(f"  - {point}")
+        else:
+            lines.append("- 当前没有命中的 playbook 样本。可以在 data/playbook.json 添加 match_id、英雄、位置和复盘结论。")
 
         return "\n".join(lines)
