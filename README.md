@@ -41,21 +41,29 @@ http://127.0.0.1:8770
 
 ### Render 部署参考
 
-1. 把整个 `dota2_agent_demo` 文件夹上传到 GitHub 仓库。
-2. 在 Render 新建 Web Service，连接这个仓库。
-3. Start Command 使用：
+不要使用 Blueprint 部署；Blueprint 页面可能要求填写支付信息。使用普通 Web Service：
+
+1. 在 Render 新建 `Web Service`。
+2. 连接 GitHub 仓库。
+3. 选择仓库：`ANTI-GENIUS/dota2-agent-demo`。
+4. Instance Type 选择 `Free`。
+5. Build Command 使用：
+
+```text
+pip install -r requirements.txt
+```
+
+6. Start Command 使用：
 
 ```text
 python app.py
 ```
 
-4. Health Check Path 使用：
+7. Health Check Path 使用：
 
 ```text
 /healthz
 ```
-
-项目里已经包含 `render.yaml` 和 `Procfile`，方便平台自动识别。
 
 ## API
 

@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: dota2-draft-agent
-    env: python
-    plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python app.py"
-    healthCheckPath: /healthz
