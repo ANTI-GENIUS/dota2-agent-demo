@@ -200,7 +200,4 @@ class Dota2DraftAgent:
         for item in advice:
             lines.append(f"- {item}")
 
-        lines.append(
-            "\n### 注意\n这个 Demo 使用公开统计数据和规则启发式，不等于职业教练结论；真正上分还要结合版本、分段、熟练度和对线细节。"
-        )
         return "\n".join(lines)

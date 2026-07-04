@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>高陈成的Dota2宝典</title>
+    <link rel="stylesheet" href="./style.css?v=pages1" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero-band">
+        <div>
+          <h1>高陈成的Dota2宝典</h1>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <form id="agent-form" class="control-panel">
+          <label>
+            己方英雄
+            <textarea name="allies" rows="3"></textarea>
+          </label>
+
+          <label>
+            敌方英雄
+            <textarea name="enemies" rows="3"></textarea>
+          </label>
+
+          <label>
+            位置偏好
+            <select name="role">
+              <option value="flexible">不限位置</option>
+              <option value="carry">一号位 / Carry</option>
+              <option value="mid">二号位 / Mid</option>
+              <option value="offlane">三号位 / Offlane</option>
+              <option value="soft_support">四号位 / Soft Support</option>
+              <option value="hard_support">五号位 / Hard Support</option>
+            </select>
+          </label>
+
+          <label>
+            你的问题
+            <input name="question" type="text" />
+          </label>
+
+          <div class="button-row">
+            <button type="submit">分析阵容</button>
+            <button type="button" id="sample-button" class="secondary-button">填入示例</button>
+          </div>
+        </form>
+
+        <section class="result-panel">
+          <div id="empty-state" class="empty-state">
+            <h2>等待分析</h2>
+          </div>
+
+          <div id="loading-state" class="loading-state hidden">
+            <div class="spinner"></div>
+            <span>分析中</span>
+          </div>
+
+          <div id="result" class="hidden">
+            <div class="summary-grid">
+              <div>
+                <span class="metric-label">己方识别</span>
+                <strong id="ally-count">0</strong>
+              </div>
+              <div>
+                <span class="metric-label">敌方识别</span>
+                <strong id="enemy-count">0</strong>
+              </div>
+              <div>
+                <span class="metric-label">候选推荐</span>
+                <strong id="recommend-count">0</strong>
+              </div>
+            </div>
+
+            <h2>推荐英雄</h2>
+            <div id="recommendations" class="recommendation-grid"></div>
+
+            <h2>出装建议</h2>
+            <div id="item-build" class="item-build"></div>
+
+            <h2>阵容风险</h2>
+            <ul id="risks" class="risk-list"></ul>
+
+            <h2>完整回答</h2>
+            <article id="answer" class="answer"></article>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./app.js?v=pages1"></script>
+  </body>
+</html>
