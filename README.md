@@ -37,10 +37,17 @@ http://127.0.0.1:8770
 仓库推送到 GitHub 后，在 GitHub 仓库里打开：
 
 ```text
-Settings -> Pages -> Source -> GitHub Actions
+Settings -> Pages -> Source -> Deploy from a branch
 ```
 
-然后等待 `Deploy GitHub Pages` 工作流完成。公开访问地址通常是：
+然后选择：
+
+```text
+Branch: main
+Folder: /docs
+```
+
+保存后等待 GitHub Pages 构建完成。公开访问地址通常是：
 
 ```text
 https://anti-genius.github.io/dota2-agent-demo/
