@@ -10,6 +10,7 @@ from tools import (
     analyze_role_balance,
     build_hero_index,
     display_hero_name,
+    display_rank_name,
     generate_advice,
     generate_item_advice,
     hero_display,
@@ -38,6 +39,7 @@ class Dota2DraftAgent:
         allies_raw = str(payload.get("allies", "")).strip()
         enemies_raw = str(payload.get("enemies", "")).strip()
         desired_role = str(payload.get("role", "flexible")).strip() or "flexible"
+        player_rank = str(payload.get("rank", "unknown")).strip() or "unknown"
         question = str(payload.get("question", "")).strip()
 
         heroes = self.client.get_hero_stats()
@@ -92,7 +94,7 @@ class Dota2DraftAgent:
             )
         )
 
-        advice = generate_advice(allies, enemies, desired_role, balance)
+        advice = generate_advice(allies, enemies, desired_role, balance, player_rank)
         item_advice = generate_item_advice(self.client, allies, enemies, desired_role, question)
         playbook = select_playbook_entries(
             load_playbook(self.data_dir),
@@ -117,6 +119,7 @@ class Dota2DraftAgent:
             allies=allies,
             enemies=enemies,
             desired_role=desired_role,
+            player_rank=player_rank,
             question=question,
             balance=balance,
             recommendations=recommendations,
@@ -139,8 +142,10 @@ class Dota2DraftAgent:
                 "allies": allies_raw,
                 "enemies": enemies_raw,
                 "role": desired_role,
+                "rank": player_rank,
                 "question": question,
             },
+            "rank_display": display_rank_name(player_rank),
             "recognized": {
                 "allies": [hero_display(hero) for hero in allies],
                 "enemies": [hero_display(hero) for hero in enemies],
@@ -175,6 +180,7 @@ class Dota2DraftAgent:
         allies: list[dict[str, Any]],
         enemies: list[dict[str, Any]],
         desired_role: str,
+        player_rank: str,
         question: str,
         balance: dict[str, Any],
         recommendations: list[dict[str, Any]],
@@ -194,6 +200,7 @@ class Dota2DraftAgent:
             f"- 敌方：{', '.join(display_hero_name(hero) for hero in enemies) if enemies else '未提供'}"
         )
         lines.append(f"- 位置偏好：{desired_role}")
+        lines.append(f"- 段位：{display_rank_name(player_rank)}")
 
         lines.append("\n### 主要风险")
         for risk in balance["risks"]:

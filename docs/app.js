@@ -6,6 +6,7 @@ const result = document.querySelector("#result");
 const allyCount = document.querySelector("#ally-count");
 const enemyCount = document.querySelector("#enemy-count");
 const recommendCount = document.querySelector("#recommend-count");
+const rankValue = document.querySelector("#rank-value");
 const recommendations = document.querySelector("#recommendations");
 const itemBuild = document.querySelector("#item-build");
 const risks = document.querySelector("#risks");
@@ -216,6 +217,18 @@ const ATTACK_TYPE_CN_NAMES = {
   Ranged: "远程",
 };
 
+const RANK_CN_NAMES = {
+  unknown: "未指定",
+  herald: "先锋",
+  guardian: "卫士",
+  crusader: "中军",
+  archon: "统帅",
+  legend: "传奇",
+  ancient: "万古",
+  divine: "超凡",
+  immortal: "冠绝",
+};
+
 const ITEM_NAME_TO_KEY = {
   "树之祭祀": "tango",
   "治疗药膏": "flask",
@@ -306,6 +319,7 @@ sampleButton.addEventListener("click", () => {
   form.elements.allies.value = "Axe, Lion, 剑圣";
   form.elements.enemies.value = "影魔, Sniper, Crystal Maiden";
   form.elements.role.value = "offlane";
+  form.elements.rank.value = "legend";
   form.elements.question.value = "这把我该补什么英雄，团战怎么打？";
 });
 
@@ -315,6 +329,7 @@ form.addEventListener("submit", async (event) => {
     allies: form.elements.allies.value,
     enemies: form.elements.enemies.value,
     role: form.elements.role.value,
+    rank: form.elements.rank.value,
     question: form.elements.question.value,
   };
 
@@ -354,14 +369,23 @@ async function runAgent(payload) {
   const allies = parseHeroNames(payload.allies || "", heroIndex);
   const enemies = parseHeroNames(payload.enemies || "", heroIndex);
   const role = payload.role || "flexible";
+  const rank = payload.rank || "unknown";
   const balance = analyzeRoleBalance(allies);
   const recommendations = await recommendHeroes(heroes, allies, enemies, role);
   const itemAdvice = generateItemAdvice(items, allies, enemies, role, payload.question || "");
-  const advice = generateAdvice(allies, enemies, role, balance);
+  const advice = generateAdvice(allies, enemies, role, balance, rank);
   const matchedPlaybook = selectPlaybookEntries(playbookData, allies, enemies, role, payload.question || "");
-  const answerMd = buildAnswer(allies, enemies, role, payload.question || "", balance, recommendations, advice, matchedPlaybook);
+  const answerMd = buildAnswer(allies, enemies, role, rank, payload.question || "", balance, recommendations, advice, matchedPlaybook);
 
   return {
+    input: {
+      allies: payload.allies || "",
+      enemies: payload.enemies || "",
+      role,
+      rank,
+      question: payload.question || "",
+    },
+    rank_display: displayRankName(rank),
     recognized: {
       allies: allies.map(heroDisplay),
       enemies: enemies.map(heroDisplay),
@@ -439,6 +463,10 @@ function displayRoleName(role) {
 
 function displayAttackType(type) {
   return ATTACK_TYPE_CN_NAMES[type] || type || "未知";
+}
+
+function displayRankName(rank) {
+  return RANK_CN_NAMES[rank] || rank || RANK_CN_NAMES.unknown;
 }
 
 function estimateWinRate(hero) {
@@ -654,7 +682,7 @@ async function recommendHeroes(heroes, allies, enemies, desiredRole, limit = 6) 
   return candidates.sort((a, b) => b.score - a.score).slice(0, limit);
 }
 
-function generateAdvice(allies, enemies, desiredRole, balance) {
+function generateAdvice(allies, enemies, desiredRole, balance, playerRank = "unknown") {
   const enemyRoles = {};
   for (const enemy of enemies) {
     for (const role of enemy.roles || []) enemyRoles[role] = (enemyRoles[role] || 0) + 1;
@@ -666,8 +694,23 @@ function generateAdvice(allies, enemies, desiredRole, balance) {
   if (!balance.role_count.Initiator) advice.push("己方缺先手：补英雄时优先看开团能力，打法上要依赖视野和反打。");
   if (desiredRole === "mid") advice.push("中单建议：关注 6/8/10 分钟符点和边路击杀窗口，英雄选择要能带节奏或守塔。");
   if (desiredRole === "carry") advice.push("一号位建议：如果阵容前中期弱，优先选自保和清线能力强的核心。");
+  const rankAdvice = rankSpecificAdvice(playerRank);
+  if (rankAdvice) advice.push(rankAdvice);
   if (!advice.length) advice.push("当前信息不足以给出强约束建议，优先补控制、视野、清线和一名稳定输出点。");
   return advice;
+}
+
+function rankSpecificAdvice(playerRank) {
+  if (["herald", "guardian", "crusader"].includes(playerRank)) {
+    return "当前段位建议：优先选机制简单、容错高、能清线和能打稳定控制的英雄；少追求花活克制，多保证补刀、TP 支援和不无视视野。";
+  }
+  if (["archon", "legend"].includes(playerRank)) {
+    return "当前段位建议：重点看 10-20 分钟第一轮关键装和抱团节奏；不要只赢对线，要把线权转成塔、视野和肉山区控制。";
+  }
+  if (["ancient", "divine", "immortal"].includes(playerRank)) {
+    return "当前段位建议：BP 和出装要服务信息差、买活、肉山和边线处理；单个英雄克制不如阵容强势期和视野交换重要。";
+  }
+  return "";
 }
 
 function generateItemAdvice(items, allies, enemies, desiredRole, question) {
@@ -873,13 +916,14 @@ function mergeUnique(primary, secondary) {
   return result;
 }
 
-function buildAnswer(allies, enemies, role, question, balance, recs, advice, matchedPlaybook) {
+function buildAnswer(allies, enemies, role, rank, question, balance, recs, advice, matchedPlaybook) {
   const lines = [];
   if (question) lines.push(`### 问题\n${question}`);
   lines.push("### 阵容识别");
   lines.push(`- 己方：${allies.length ? allies.map(displayHeroName).join(", ") : "未提供"}`);
   lines.push(`- 敌方：${enemies.length ? enemies.map(displayHeroName).join(", ") : "未提供"}`);
   lines.push(`- 位置偏好：${role}`);
+  lines.push(`- 段位：${displayRankName(rank)}`);
   lines.push("\n### 主要风险");
   for (const risk of balance.risks) lines.push(`- ${risk}`);
   lines.push("\n### 推荐候选");
@@ -920,6 +964,7 @@ function renderResult(data) {
   allyCount.textContent = data.recognized.allies.length;
   enemyCount.textContent = data.recognized.enemies.length;
   recommendCount.textContent = data.recommendations.length;
+  rankValue.textContent = data.rank_display || displayRankName(data.input?.rank);
   recommendations.innerHTML = data.recommendations.map((item) => renderHeroCard(item)).join("");
   itemBuild.innerHTML = renderItemBuild(data.item_advice);
   risks.innerHTML = data.balance.risks.map((risk) => `<li>${escapeHtml(risk)}</li>`).join("");

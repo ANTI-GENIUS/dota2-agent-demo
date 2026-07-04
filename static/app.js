@@ -6,6 +6,7 @@ const result = document.querySelector("#result");
 const allyCount = document.querySelector("#ally-count");
 const enemyCount = document.querySelector("#enemy-count");
 const recommendCount = document.querySelector("#recommend-count");
+const rankValue = document.querySelector("#rank-value");
 const recommendations = document.querySelector("#recommendations");
 const itemBuild = document.querySelector("#item-build");
 const risks = document.querySelector("#risks");
@@ -16,6 +17,7 @@ sampleButton.addEventListener("click", () => {
   form.elements.allies.value = "Axe, Lion, 剑圣";
   form.elements.enemies.value = "影魔, Sniper, Crystal Maiden";
   form.elements.role.value = "offlane";
+  form.elements.rank.value = "legend";
   form.elements.question.value = "这把我该补什么英雄，团战怎么打？";
 });
 
@@ -25,6 +27,7 @@ form.addEventListener("submit", async (event) => {
     allies: form.elements.allies.value,
     enemies: form.elements.enemies.value,
     role: form.elements.role.value,
+    rank: form.elements.rank.value,
     question: form.elements.question.value,
   };
 
@@ -65,6 +68,7 @@ function renderResult(data) {
   allyCount.textContent = data.recognized.allies.length;
   enemyCount.textContent = data.recognized.enemies.length;
   recommendCount.textContent = data.recommendations.length;
+  rankValue.textContent = data.rank_display || displayRankName(data.input?.rank);
 
   recommendations.innerHTML = data.recommendations
     .map((item) => renderHeroCard(item))
@@ -78,6 +82,21 @@ function renderResult(data) {
 
   playbook.innerHTML = renderPlaybook(data.playbook || []);
   answer.innerHTML = markdownToHtml(data.answer_md);
+}
+
+function displayRankName(rank) {
+  const names = {
+    unknown: "未指定",
+    herald: "先锋",
+    guardian: "卫士",
+    crusader: "中军",
+    archon: "统帅",
+    legend: "传奇",
+    ancient: "万古",
+    divine: "超凡",
+    immortal: "冠绝",
+  };
+  return names[rank] || rank || "未指定";
 }
 
 function renderHeroCard(item) {

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>高陈成的Dota2宝典</title>
-    <link rel="stylesheet" href="./style.css?v=pages2" />
+    <link rel="stylesheet" href="./style.css?v=pages3" />
   </head>
   <body>
     <main class="app-shell">
@@ -35,6 +35,21 @@
               <option value="offlane">三号位 / Offlane</option>
               <option value="soft_support">四号位 / Soft Support</option>
               <option value="hard_support">五号位 / Hard Support</option>
+            </select>
+          </label>
+
+          <label>
+            当前段位
+            <select name="rank">
+              <option value="unknown">未指定</option>
+              <option value="herald">先锋</option>
+              <option value="guardian">卫士</option>
+              <option value="crusader">中军</option>
+              <option value="archon">统帅</option>
+              <option value="legend">传奇</option>
+              <option value="ancient">万古</option>
+              <option value="divine">超凡</option>
+              <option value="immortal">冠绝</option>
             </select>
           </label>
 
@@ -73,6 +88,10 @@
                 <span class="metric-label">候选推荐</span>
                 <strong id="recommend-count">0</strong>
               </div>
+              <div>
+                <span class="metric-label">当前段位</span>
+                <strong id="rank-value">未指定</strong>
+              </div>
             </div>
 
             <h2>推荐英雄</h2>
@@ -94,6 +113,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=pages2"></script>
+    <script src="./app.js?v=pages3"></script>
   </body>
 </html>

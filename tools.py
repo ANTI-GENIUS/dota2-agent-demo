@@ -323,6 +323,18 @@ ATTACK_TYPE_CN_NAMES = {
     "Ranged": "远程",
 }
 
+RANK_CN_NAMES = {
+    "unknown": "未指定",
+    "herald": "先锋",
+    "guardian": "卫士",
+    "crusader": "中军",
+    "archon": "统帅",
+    "legend": "传奇",
+    "ancient": "万古",
+    "divine": "超凡",
+    "immortal": "冠绝",
+}
+
 
 ITEM_NAME_TO_KEY = {
     "树之祭祀": "tango",
@@ -576,6 +588,12 @@ def display_attack_type(attack_type: str | None) -> str:
     if not attack_type:
         return "未知"
     return ATTACK_TYPE_CN_NAMES.get(attack_type, attack_type)
+
+
+def display_rank_name(rank: str | None) -> str:
+    if not rank:
+        return RANK_CN_NAMES["unknown"]
+    return RANK_CN_NAMES.get(rank, rank)
 
 
 def hero_display(hero: dict[str, Any]) -> dict[str, Any]:
@@ -858,6 +876,7 @@ def generate_advice(
     enemies: list[dict[str, Any]],
     desired_role: str,
     balance: dict[str, Any],
+    player_rank: str = "unknown",
 ) -> list[str]:
     enemy_roles = {}
     for enemy in enemies:
@@ -879,9 +898,22 @@ def generate_advice(
         advice.append("中单 Agent 建议：关注 6/8/10 分钟符点和边路击杀窗口，英雄选择要能带节奏或守塔。")
     if desired_role == "carry":
         advice.append("一号位 Agent 建议：如果阵容前中期弱，优先选自保和清线能力强的核心，别只看后期上限。")
+    rank_advice = rank_specific_advice(player_rank)
+    if rank_advice:
+        advice.append(rank_advice)
     if not advice:
         advice.append("当前信息不足以给出强约束建议，优先补控制、视野、清线和一名稳定输出点。")
     return advice
+
+
+def rank_specific_advice(player_rank: str) -> str:
+    if player_rank in {"herald", "guardian", "crusader"}:
+        return "当前段位建议：优先选机制简单、容错高、能清线和能打稳定控制的英雄；少追求花活克制，多保证补刀、TP 支援和不无视视野。"
+    if player_rank in {"archon", "legend"}:
+        return "当前段位建议：重点看 10-20 分钟第一轮关键装和抱团节奏；不要只赢对线，要把线权转成塔、视野和肉山区控制。"
+    if player_rank in {"ancient", "divine", "immortal"}:
+        return "当前段位建议：BP 和出装要服务信息差、买活、肉山和边线处理；单个英雄克制不如阵容强势期和视野交换重要。"
+    return ""
 
 
 def generate_item_advice(
